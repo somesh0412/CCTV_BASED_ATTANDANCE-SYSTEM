@@ -1,2 +1,2 @@
 # CCTV_BASED_ATTANDANCE-SYSTEM
-A cctv based attandance system project 
+A cctv based attandance system project

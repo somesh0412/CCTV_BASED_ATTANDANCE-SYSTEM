@@ -40,9 +40,18 @@ while True:
 
             # Draw rectangle around face
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            face = frame[y1:y2, x1:x2]
+            if face.size != 0:
+                cv2.imshow(f"Face{i}",face)
+            # to strore images
+            key = cv2.waitKey(1)
+            if key == ord('s'):
+                cv2.imwrite("face.jgp",face)
+                print("Saved")
 
     # Show output
     cv2.imshow("Face Detection", frame)
+    
 
     # Press ESC to exit
     if cv2.waitKey(1) == 27:
