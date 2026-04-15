@@ -8,7 +8,7 @@ net = cv2.dnn.readNetFromCaffe(
 
 # Start webcam
 cap = cv2.VideoCapture(0)
-
+count = 0
 while True:
     ret, frame = cap.read()
 
@@ -40,6 +40,15 @@ while True:
 
             # Draw rectangle around face
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            face = frame[y1:y2, x1:x2]
+            if face.size != 0:
+                cv2.imshow("face", face)
+                key = cv2.waitKey(1)
+                filename = f"faces{count}.jpg"
+                if key == ord('s'):
+                    cv2.imwrite(filename,face)
+                    count += 1
+
 
     # Show output
     cv2.imshow("Face Detection", frame)
