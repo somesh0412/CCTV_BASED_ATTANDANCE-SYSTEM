@@ -1,0 +1,10 @@
+# CCTV Attendance System v1 — Requirements
+# Python 3.10 or 3.11 required (TensorFlow constraint)
+# NO dlib. NO C++ compilation. NO external model files.
+
+flask>=2.3.0
+opencv-python>=4.8.0
+keras-facenet>=0.3.2
+tensorflow>=2.13.0
+numpy>=1.24.0
+pillow>=10.0.0

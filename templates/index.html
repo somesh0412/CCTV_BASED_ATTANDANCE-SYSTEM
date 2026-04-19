@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CCTV Attendance System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c10;--surface:#111520;--surface2:#181e2e;--border:#1e2840;
+  --accent:#00e5a0;--accent2:#3d7eff;--warn:#ff9b3d;--danger:#ff4d6d;
+  --present:#00e5a0;--absent:#ff4d6d;
+  --text:#e2e8f8;--muted:#6b7a99;--radius:12px;
+  --mono:'Space Mono',monospace;--body:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.6}
+
+/* ── Layout ── */
+.layout{display:grid;grid-template-columns:270px 1fr 310px;grid-template-rows:54px 1fr;grid-template-areas:"nav nav nav" "left main right";height:100vh;overflow:hidden}
+
+/* ── Nav ── */
+nav{grid-area:nav;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:10}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--accent)}
+.brand svg{width:20px;height:20px}
+.badge{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:4px 10px;border-radius:6px}
+
+/* ── Sidebars ── */
+.sidebar-left{grid-area:left;background:var(--surface);border-right:1px solid var(--border);padding:16px 14px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+.sidebar-right{grid-area:right;background:var(--surface);border-left:1px solid var(--border);padding:16px 14px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+
+/* ── Main ── */
+.main{grid-area:main;background:var(--bg);display:flex;flex-direction:column;padding:16px;gap:12px;overflow:hidden}
+.feed-wrap{position:relative;flex:1;background:#000;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;min-height:0}
+.feed-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.feed-hud{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.hud-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);padding:4px 10px;border-radius:99px;font-size:11px;font-family:var(--mono);color:#fff}
+.dot{width:7px;height:7px;border-radius:50%}
+.dot.green{background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 1.4s infinite}
+.dot.red{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.feed-bar{display:flex;gap:8px;align-items:center}
+.feed-bar-info{flex:1;font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+/* ── Cards ── */
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.card-title{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:11px;display:flex;align-items:center;justify-content:space-between}
+.card-title span{color:var(--accent)}
+
+/* ── Stats ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);line-height:1}
+.stat-label{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── Status msg ── */
+.status-msg{font-size:11px;color:var(--muted);font-family:var(--mono);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;word-break:break-word;line-height:1.5}
+
+/* ── Attendance log ── */
+.att-list{display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:9999px}
+.att-list::-webkit-scrollbar{width:4px}
+.att-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+.att-item{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;animation:slideIn .3s ease}
+.att-item.new{border-color:var(--accent);box-shadow:0 0 0 1px rgba(0,229,160,.18)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.att-avatar{width:32px;height:32px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0;text-transform:uppercase}
+.att-body{flex:1;min-width:0}
+.att-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att-time{font-family:var(--mono);font-size:10px;color:var(--accent)}
+.att-badge{background:rgba(0,229,160,.12);color:var(--accent);border:1px solid rgba(0,229,160,.3);font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:99px;white-space:nowrap}
+
+/* ── Present/Absent board ── */
+.roster{display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.roster::-webkit-scrollbar{width:4px}
+.roster::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+.roster-item{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;transition:border-color .3s,box-shadow .3s}
+.roster-item.present{border-color:rgba(0,229,160,.45);box-shadow:0 0 0 1px rgba(0,229,160,.1)}
+.roster-item.absent{opacity:.65}
+
+.roster-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.roster-dot.present{background:var(--present);box-shadow:0 0 6px var(--present)}
+.roster-dot.absent{background:var(--absent)}
+
+.roster-name{flex:1;font-size:13px;font-weight:500}
+.roster-status{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:99px;font-weight:700}
+.roster-status.present{background:rgba(0,229,160,.12);color:var(--present);border:1px solid rgba(0,229,160,.3)}
+.roster-status.absent{background:rgba(255,77,109,.1);color:var(--absent);border:1px solid rgba(255,77,109,.25)}
+.roster-time{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:8px;cursor:pointer;font-family:var(--body);font-weight:500;font-size:13px;padding:8px 14px;transition:filter .15s,transform .1s;white-space:nowrap;text-decoration:none}
+.btn:hover{filter:brightness(1.12)}
+.btn:active{transform:scale(.97)}
+.btn-accent{background:var(--accent);color:#000}
+.btn-blue{background:var(--accent2);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+
+/* ── Empty state ── */
+.empty{text-align:center;color:var(--muted);font-size:12px;padding:18px 0}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);padding:9px 20px;border-radius:99px;font-size:13px;font-family:var(--mono);pointer-events:none;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;z-index:999}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Topbar ── -->
+<nav>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/>
+      <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+    </svg>
+    CCTV&nbsp;ATTENDANCE
+  </div>
+  <div class="badge" id="clock">--:--:--</div>
+</nav>
+
+<!-- ── Left Sidebar ── -->
+<aside class="sidebar-left">
+
+  <!-- Status -->
+  <div class="card">
+    <div class="card-title">System Status</div>
+    <div class="status-msg" id="statusMsg">Connecting...</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-title">Today's Summary</div>
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-num" id="statPresent">0</div>
+        <div class="stat-label">Present</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="statAbsent">0</div>
+        <div class="stat-label">Absent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <div class="card-title">Controls</div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <button class="btn btn-ghost btn-sm" id="btnStartStop" onclick="toggleCamera()">⏹ Stop Camera</button>
+      <a class="btn btn-blue btn-sm" href="/download/attendance" download>↓ Download CSV</a>
+    </div>
+  </div>
+
+  <!-- Capture tip -->
+  <div class="card">
+    <div class="card-title">Add New Person</div>
+    <p style="font-size:11px;color:var(--muted);line-height:1.6">
+      Run in terminal:<br>
+      <code style="color:var(--accent)">python capture.py</code><br>
+      then:<br>
+      <code style="color:var(--accent)">python pickle_gen.py</code>
+    </p>
+  </div>
+
+</aside>
+
+<!-- ── Main Feed ── -->
+<main class="main">
+  <div class="feed-wrap">
+    <img id="videoFeed" src="/video_feed" alt="Live Feed"/>
+    <div class="feed-hud">
+      <div class="hud-pill"><div class="dot green" id="liveDot"></div><span id="liveLabel">LIVE</span></div>
+      <div class="hud-pill" id="detectedPill">👤 Waiting...</div>
+    </div>
+  </div>
+  <div class="feed-bar">
+    <div class="feed-bar-info">Stream → http://localhost:5000/video_feed</div>
+    <button class="btn btn-ghost btn-sm" onclick="refreshFeed()">↺ Refresh</button>
+  </div>
+</main>
+
+<!-- ── Right Sidebar ── -->
+<aside class="sidebar-right">
+
+  <!-- Present / Absent Board -->
+  <div class="card">
+    <div class="card-title">
+      Live Attendance Board
+      <span id="rosterSummary">0/0</span>
+    </div>
+    <div class="roster" id="rosterList">
+      <div class="empty">Loading roster...</div>
+    </div>
+  </div>
+
+  <!-- Attendance Log -->
+  <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div class="card-title">
+      Marked Present Today
+      <span id="attCount">0</span>
+    </div>
+    <div class="att-list" id="attList" style="flex:1;overflow-y:auto">
+      <div class="empty">No records yet...</div>
+    </div>
+  </div>
+
+</aside>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Clock ──────────────────────────────────────────────────────────
+function updateClock(){
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-IN',{hour12:false});
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── Toast ──────────────────────────────────────────────────────────
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ── State ──────────────────────────────────────────────────────────
+let cameraActive   = true;
+let prevAttCount   = 0;
+let prevPresentSet = new Set();
+
+// ── Status polling ─────────────────────────────────────────────────
+async function pollStatus(){
+  try{
+    const d = await fetch('/api/status').then(r=>r.json());
+    document.getElementById('statusMsg').textContent = d.message;
+    cameraActive = d.active;
+    const btn = document.getElementById('btnStartStop');
+    const dot = document.getElementById('liveDot');
+    const lbl = document.getElementById('liveLabel');
+    if(d.active){
+      btn.textContent='⏹ Stop Camera';
+      dot.className='dot green'; lbl.textContent='LIVE';
+    }else{
+      btn.textContent='▶ Start Camera';
+      dot.className='dot red'; lbl.textContent='OFFLINE';
+    }
+  }catch(e){}
+}
+
+// ── Attendance log ─────────────────────────────────────────────────
+async function pollAttendance(){
+  try{
+    const list = await fetch('/api/attendance').then(r=>r.json());
+    const count = list.length;
+    document.getElementById('attCount').textContent = count;
+
+    // Toast for new entry
+    if(count > prevAttCount && prevAttCount > 0){
+      const newest = list[0];
+      const name = newest.Name || newest.name || '?';
+      showToast(`✅ ${name} marked PRESENT`);
+    }
+    prevAttCount = count;
+
+    const el = document.getElementById('attList');
+    if(count === 0){
+      el.innerHTML='<div class="empty">No one marked present yet...</div>';
+    } else {
+      el.innerHTML = list.map((r,i)=>{
+        const name = r.Name||r.name||'—';
+        const time = r.Time||r.time||'';
+        const date = r.Date||r.date||'';
+        const isNew = i===0 && count===prevAttCount;
+        return `<div class="att-item${isNew?' new':''}">
+          <div class="att-avatar">${name.charAt(0)}</div>
+          <div class="att-body">
+            <div class="att-name">${name}</div>
+            <div class="att-time">${time}</div>
+          </div>
+          <div class="att-badge">✓ Present</div>
+        </div>`;
+      }).join('');
+    }
+  }catch(e){}
+}
+
+// ── Roster (present/absent board) ─────────────────────────────────
+async function pollRoster(){
+  try{
+    const persons = await fetch('/api/registered').then(r=>r.json());
+    const presentCount = persons.filter(p=>p.present).length;
+    const totalCount   = persons.length;
+
+    document.getElementById('statPresent').textContent = presentCount;
+    document.getElementById('statAbsent').textContent  = totalCount - presentCount;
+    document.getElementById('rosterSummary').textContent = `${presentCount}/${totalCount}`;
+
+    // Toast when someone newly appears as present
+    persons.forEach(p=>{
+      if(p.present && !prevPresentSet.has(p.name)){
+        if(prevPresentSet.size > 0){   // skip on first load
+          showToast(`🎓 ${p.name} is NOW PRESENT`);
+        }
+        prevPresentSet.add(p.name);
+      }
+    });
+
+    const el = document.getElementById('rosterList');
+    if(persons.length === 0){
+      el.innerHTML='<div class="empty">No persons registered.<br>Run capture.py first.</div>';
+      return;
+    }
+
+    // Sort: present first, then alphabetical
+    const sorted = [...persons].sort((a,b)=>{
+      if(a.present === b.present) return a.name.localeCompare(b.name);
+      return a.present ? -1 : 1;
+    });
+
+    el.innerHTML = sorted.map(p=>{
+      const cls    = p.present ? 'present' : 'absent';
+      const label  = p.present ? '✓ Present' : '✗ Absent';
+      // Find time from attendance list
+      return `<div class="roster-item ${cls}">
+        <div class="roster-dot ${cls}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="roster-name">${p.name}</div>
+        </div>
+        <div class="roster-status ${cls}">${label}</div>
+      </div>`;
+    }).join('');
+
+  }catch(e){}
+}
+
+// ── Camera toggle ──────────────────────────────────────────────────
+async function toggleCamera(){
+  const ep = cameraActive ? '/api/stop' : '/api/start';
+  await fetch(ep,{method:'POST'});
+  if(!cameraActive) refreshFeed();
+  await pollStatus();
+}
+
+function refreshFeed(){
+  document.getElementById('videoFeed').src='/video_feed?'+Date.now();
+}
+
+// ── Start all polling ──────────────────────────────────────────────
+pollStatus();
+pollAttendance();
+pollRoster();
+
+setInterval(pollStatus,     3000);
+setInterval(pollAttendance, 1500);  // fast — so log updates quickly
+setInterval(pollRoster,     1500);  // fast — so present/absent flips quickly
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+face_data.pkl
+*.caffemodel
+.env
+.DS_Store
