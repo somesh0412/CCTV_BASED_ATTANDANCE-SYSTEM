@@ -1,0 +1,707 @@
+/* ==========================================================
+   Teacher Register Page
+   ========================================================== */
+
+/* ---------- Global box sizing ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ---------- Variables ---------- */
+:root {
+  --tr-navy: #0b1e42;
+  --tr-navy-dark: #071531;
+
+  --tr-green: #16a34a;
+  --tr-green-dark: #15803d;
+
+  --tr-text-dark: #0f172a;
+  --tr-text-muted: #64748b;
+
+  --tr-border: #e2e8f0;
+  --tr-bg-light: #f8fafc;
+  --tr-white: #ffffff;
+
+  --tr-red: #dc2626;
+
+  --tr-radius: 16px;
+}
+
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
+.tr-page {
+  position: relative;
+
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 80px 20px 40px;
+
+  background: linear-gradient(
+    135deg,
+    var(--tr-navy-dark) 0%,
+    var(--tr-navy) 55%,
+    #103322 130%
+  );
+
+  font-family:
+    "Inter",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* ---------- Background decoration ---------- */
+
+.tr-bg {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 12% 15%,
+      rgba(22, 163, 74, 0.22),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 88% 85%,
+      rgba(37, 99, 235, 0.18),
+      transparent 50%
+    );
+
+  pointer-events: none;
+}
+
+/* ==========================================================
+   BACK BUTTON
+   ========================================================== */
+
+.tr-back {
+  position: absolute;
+
+  top: 28px;
+  left: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  color: #e2e8f0;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  font-size: 0.82rem;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease;
+
+  z-index: 10;
+}
+
+.tr-back:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+.cas-navbar__logo {
+  width: 44px; /* Adjust this if you want a bigger box (e.g., 52px) */
+  height: 44px; /* Adjust this if you want a bigger box (e.g., 52px) */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cas-navy);
+  color: var(--cas-white);
+  flex-shrink: 0;
+  overflow: hidden; /* <-- IMPORTANT: Clips the image edges to the rounded corners */
+}
+
+.cas-navbar__logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Use 'cover' to fill completely, or 'contain' if the original image has its own margins */
+  display: block;
+}
+
+/* ==========================================================
+   CARD
+   ========================================================== */
+
+.tr-card {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+  max-width: 590px;
+
+  /* IMPORTANT */
+  min-width: 0;
+
+  background: var(--tr-white);
+
+  border-radius: var(--tr-radius);
+
+  padding: 36px 40px;
+
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.35);
+
+  text-align: center;
+
+  overflow: hidden;
+}
+
+/* ==========================================================
+   BRAND
+   ========================================================== */
+
+.tr-card__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-bottom: 20px;
+
+  width: 100%;
+}
+
+.tr-card__brand-icon {
+  width: 30px;
+  height: 30px;
+
+  flex: 0 0 30px;
+
+  border-radius: 8px;
+
+  background: var(--tr-navy);
+
+  color: var(--tr-white);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tr-card__brand-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+
+  letter-spacing: 0.4px;
+
+  color: var(--tr-text-dark);
+}
+
+/* ==========================================================
+   MAIN ICON
+   ========================================================== */
+
+.tr-card__icon {
+  width: 60px;
+  height: 60px;
+
+  border-radius: 50%;
+
+  background: #eafbf1;
+
+  border: 1px solid #d5f2e0;
+
+  color: var(--tr-green);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 16px;
+}
+
+/* ==========================================================
+   TITLE
+   ========================================================== */
+
+.tr-card__title {
+  margin: 0 0 6px;
+
+  font-size: 1.4rem;
+  line-height: 1.25;
+
+  font-weight: 800;
+
+  color: var(--tr-text-dark);
+}
+
+.tr-card__subtitle {
+  margin: 0 0 22px;
+
+  font-size: 0.86rem;
+  line-height: 1.5;
+
+  color: var(--tr-text-muted);
+}
+
+/* ==========================================================
+   ALERT
+   ========================================================== */
+
+.tr-alert {
+  width: 100%;
+
+  font-size: 0.82rem;
+
+  padding: 10px 14px;
+
+  border-radius: 10px;
+
+  margin-bottom: 18px;
+
+  text-align: left;
+}
+
+.tr-alert--error {
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: var(--tr-red);
+}
+
+.tr-alert--success {
+  background: #eafbf1;
+
+  border: 1px solid #b8ecca;
+
+  color: var(--tr-green-dark);
+}
+
+/* ==========================================================
+   FORM
+   ========================================================== */
+
+.tr-form {
+  width: 100%;
+  max-width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 16px;
+
+  text-align: left;
+
+  min-width: 0;
+}
+
+/* ==========================================================
+   TWO COLUMN GRID
+   ========================================================== */
+
+.tr-form__grid {
+  width: 100%;
+  max-width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 14px;
+
+  min-width: 0;
+}
+
+/* ==========================================================
+   FIELD
+   ========================================================== */
+
+.tr-field {
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.tr-field__label {
+  display: block;
+
+  font-size: 0.8rem;
+
+  font-weight: 600;
+
+  color: var(--tr-text-dark);
+}
+
+/* ==========================================================
+   INPUT CONTAINER
+   ========================================================== */
+
+.tr-field__control {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  border: 1px solid var(--tr-border);
+
+  border-radius: 10px;
+
+  padding: 11px 14px;
+
+  background: var(--tr-bg-light);
+
+  overflow: hidden;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.tr-field__control:focus-within {
+  border-color: var(--tr-green);
+
+  box-shadow:
+    0 0 0 3px rgba(22, 163, 74, 0.15);
+
+  background: var(--tr-white);
+}
+
+/* ==========================================================
+   FIELD ICON
+   ========================================================== */
+
+.tr-field__icon {
+  color: var(--tr-text-muted);
+
+  flex: 0 0 auto;
+}
+
+/* ==========================================================
+   INPUT + SELECT
+   ========================================================== */
+
+.tr-field__control input,
+.tr-field__control select {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  flex: 1 1 auto;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  font-size: 0.9rem;
+
+  color: var(--tr-text-dark);
+
+  appearance: none;
+}
+
+.tr-field__control input::placeholder {
+  color: #94a3b8;
+}
+
+/* ==========================================================
+   SELECT
+   ========================================================== */
+
+.tr-field__control select {
+  cursor: pointer;
+}
+
+/* ==========================================================
+   PASSWORD TOGGLE
+   ========================================================== */
+
+.tr-field__toggle {
+  flex: 0 0 auto;
+
+  width: 24px;
+  height: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  background: transparent;
+
+  color: var(--tr-text-muted);
+
+  padding: 0;
+
+  margin: 0;
+
+  cursor: pointer;
+}
+
+.tr-field__toggle:hover {
+  color: var(--tr-text-dark);
+}
+
+/* ==========================================================
+   SUBMIT BUTTON
+   ========================================================== */
+
+.tr-submit {
+  width: 100%;
+  max-width: 100%;
+
+  min-height: 52px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 12px 16px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: var(--tr-green);
+
+  color: var(--tr-white);
+
+  font-family: inherit;
+
+  font-size: 0.95rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  margin-top: 6px;
+
+  transition:
+    filter 0.2s ease,
+    transform 0.15s ease;
+}
+
+.tr-submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+
+  transform: translateY(-1px);
+}
+
+.tr-submit:disabled {
+  opacity: 0.7;
+
+  cursor: not-allowed;
+}
+
+/* ==========================================================
+   LOGIN PROMPT
+   ========================================================== */
+
+.tr-login-prompt {
+  width: 100%;
+
+  margin: 20px 0 0;
+
+  font-size: 0.86rem;
+
+  line-height: 1.5;
+
+  color: var(--tr-text-muted);
+
+  text-align: center;
+}
+
+.tr-link {
+  color: var(--tr-green-dark);
+
+  font-weight: 600;
+
+  background: transparent;
+
+  padding: 0;
+
+  text-decoration: none;
+}
+
+.tr-link:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (max-width: 700px) {
+  .tr-page {
+    align-items: flex-start;
+
+    padding:
+      90px
+      20px
+      40px;
+  }
+
+  .tr-card {
+    max-width: 520px;
+
+    padding:
+      32px
+      28px;
+  }
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+  .tr-page {
+    min-height: 100vh;
+
+    align-items: flex-start;
+
+    padding:
+      80px
+      16px
+      32px;
+  }
+
+  .tr-back {
+    top: 16px;
+    left: 16px;
+
+    padding: 8px 12px;
+
+    font-size: 0.8rem;
+  }
+
+  .tr-card {
+    width: 100%;
+    max-width: 100%;
+
+    padding:
+      28px
+      20px;
+
+    border-radius: 14px;
+  }
+
+  /* Stack First/Last Name */
+  .tr-form__grid {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+  }
+
+  .tr-card__brand {
+    margin-bottom: 18px;
+  }
+
+  .tr-card__brand-text {
+    font-size: 0.72rem;
+  }
+
+  .tr-card__icon {
+    width: 56px;
+    height: 56px;
+
+    margin-bottom: 14px;
+  }
+
+  .tr-card__title {
+    font-size: 1.3rem;
+  }
+
+  .tr-card__subtitle {
+    font-size: 0.82rem;
+
+    margin-bottom: 20px;
+  }
+
+  .tr-form {
+    gap: 15px;
+  }
+}
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 400px) {
+  .tr-page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .tr-card {
+    padding:
+      24px
+      16px;
+  }
+
+  .tr-card__brand-text {
+    font-size: 0.68rem;
+  }
+
+  .tr-card__title {
+    font-size: 1.2rem;
+  }
+
+  .tr-card__subtitle {
+    font-size: 0.8rem;
+  }
+
+  .tr-field__control {
+    height: 50px;
+
+    padding:
+      10px
+      12px;
+  }
+
+  .tr-submit {
+    min-height: 50px;
+  }
+}
