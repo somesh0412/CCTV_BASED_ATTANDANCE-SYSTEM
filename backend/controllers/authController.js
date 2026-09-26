@@ -64,4 +64,41 @@ async function getProfile(req, res, next) {
   }
 }
 
-module.exports = { register, login, getProfile };
+async function registerStudent(req, res, next) {
+  try {
+    const { firstName, lastName, studentId, department, email, password, faceEmbeddings } = req.body;
+    const student = await authService.registerStudent({
+      firstName,
+      lastName,
+      studentId,
+      department,
+      email,
+      password,
+      faceEmbeddings,
+    });
+    return successResponse(res, 201, "Student registered successfully", { student });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function loginStudent(req, res, next) {
+  try {
+    const { studentId, password } = req.body;
+    const { token, student } = await authService.loginStudent({ studentId, password });
+    return successResponse(res, 200, "Login successful", { token, student });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getStudentProfile(req, res, next) {
+  try {
+    const student = await authService.getStudentProfile(req.user.id);
+    return res.status(200).json({ success: true, student });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { register, login, getProfile, registerStudent, loginStudent, getStudentProfile };

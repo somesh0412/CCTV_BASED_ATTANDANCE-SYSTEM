@@ -10,6 +10,8 @@ const { body } = require("express-validator");
 
 const attendanceController = require("../controllers/attendanceController");
 const validateRequest = require("../middleware/validateMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
@@ -61,6 +63,13 @@ router.post(
 router.get(
   "/",
   attendanceController.getAttendance
+);
+
+router.get(
+  "/mine",
+  authMiddleware,
+  roleMiddleware("student"),
+  attendanceController.getStudentAttendance
 );
 
 module.exports = router;

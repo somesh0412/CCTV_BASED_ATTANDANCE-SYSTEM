@@ -34,7 +34,7 @@ export default function LandingPage() {
       <header className="cas-navbar">
         <div className="cas-navbar__brand">
           <div className="cas-navbar__logo">
-            <img src={PageLogo} alt="CCTV Logo" className="cas-navbar__logo-img"/>
+            <img src={PageLogo} alt="CCTV Logo" className="cas-navbar__logo-img" />
           </div>
           <div>
             <h1 className="cas-navbar__title">
@@ -118,7 +118,7 @@ export default function LandingPage() {
                 </span>
                 <h4>Student Login</h4>
                 <p>Access your attendance and profile</p>
-                <button className="cas-btn cas-btn--blue" >
+                <button className="cas-btn cas-btn--blue" onClick={() => navigate('/student-login')}>
                   Login as Student <ArrowRight size={16} />
                 </button>
               </div>

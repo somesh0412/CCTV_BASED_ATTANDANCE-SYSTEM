@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CCTV-Based Attendance System - Runtime Architecture",
+    "output": "architecture-runtime.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "primary-pipeline",
+        "label": "End-to-End Attendance Path",
+        "focus": [
+          "cctv_camera",
+          "video_ingest",
+          "face_detector",
+          "deepsort_tracker",
+          "facenet_embedder",
+          "face_matcher",
+          "attendance_engine",
+          "backend_api",
+          "mongodb_atlas"
+        ],
+        "note": "Follow the live camera feed through AI detection, tracking, biometric verification, and database persistence."
+      },
+      {
+        "id": "vision-tracking",
+        "label": "Vision & Track Caching",
+        "focus": [
+          "video_ingest",
+          "face_detector",
+          "deepsort_tracker",
+          "identity_cache"
+        ],
+        "note": "DeepSORT multi-object tracking and in-memory identity caching prevent redundant neural network passes."
+      },
+      {
+        "id": "biometric-verification",
+        "label": "Biometric Matching & Engine",
+        "focus": [
+          "facenet_embedder",
+          "face_matcher",
+          "attendance_engine"
+        ],
+        "note": "FaceNet 512-d feature extraction with cosine matching and session debouncing rules."
+      },
+      {
+        "id": "application-tier",
+        "label": "Management & Dashboard",
+        "focus": [
+          "web_dashboard",
+          "backend_api",
+          "mongodb_atlas"
+        ],
+        "note": "React portal querying authenticated attendance records and schedules via Express REST API."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "cctv_camera",
+      "type": "external",
+      "label": "CCTV Camera",
+      "sublabel": "RTSP / IP Video",
+      "tag": "Unsecured Edge",
+      "pos": [50, 60],
+      "size": [130, 56]
+    },
+    {
+      "id": "video_ingest",
+      "type": "backend",
+      "label": "Video Ingest",
+      "sublabel": "OpenCV Stream Grabber",
+      "tag": "30 FPS Frames",
+      "pos": [260, 60],
+      "size": [130, 56]
+    },
+    {
+      "id": "face_detector",
+      "type": "backend",
+      "label": "Face Detector",
+      "sublabel": "YOLOv8n-Face",
+      "tag": "BBox Localization",
+      "pos": [470, 60],
+      "size": [130, 56]
+    },
+    {
+      "id": "deepsort_tracker",
+      "type": "backend",
+      "label": "DeepSORT Tracker",
+      "sublabel": "Multi-Object Tracker",
+      "tag": "Track ID Persistence",
+      "pos": [680, 60],
+      "size": [130, 56]
+    },
+    {
+      "id": "identity_cache",
+      "type": "database",
+      "label": "Identity Cache",
+      "sublabel": "In-Memory TTL Store",
+      "tag": "3s Track TTL",
+      "pos": [890, 60],
+      "size": [130, 56]
+    },
+    {
+      "id": "facenet_embedder",
+      "type": "backend",
+      "label": "FaceNet Embedder",
+      "sublabel": "InceptionResnetV1",
+      "brand": "pytorch",
+      "tag": "512-d Vector",
+      "pos": [680, 180],
+      "size": [130, 56]
+    },
+    {
+      "id": "face_matcher",
+      "type": "backend",
+      "label": "Biometric Matcher",
+      "sublabel": "Cosine Distance",
+      "tag": "Thresh <= 0.40",
+      "pos": [470, 180],
+      "size": [130, 56]
+    },
+    {
+      "id": "attendance_engine",
+      "type": "backend",
+      "label": "Attendance Engine",
+      "sublabel": "Session & Debounce",
+      "tag": "Deduplication",
+      "pos": [260, 180],
+      "size": [130, 56]
+    },
+    {
+      "id": "web_dashboard",
+      "type": "frontend",
+      "label": "Web Portal",
+      "sublabel": "React + Vite SPA",
+      "brand": "react",
+      "tag": "Teacher & Student UI",
+      "pos": [50, 300],
+      "size": [130, 56]
+    },
+    {
+      "id": "backend_api",
+      "type": "backend",
+      "label": "Express Server",
+      "sublabel": "Node.js REST API",
+      "brand": "node-js",
+      "tag": "Port :5000 / JWT",
+      "pos": [260, 300],
+      "size": [130, 56]
+    },
+    {
+      "id": "mongodb_atlas",
+      "type": "database",
+      "label": "MongoDB Atlas",
+      "sublabel": "Cloud Cluster",
+      "brand": "mongodb",
+      "tag": "Durable Store",
+      "pos": [470, 300],
+      "size": [130, 56]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Physical Edge (CCTV Network)",
+      "wraps": [
+        "cctv_camera"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "AI Vision Runtime (Local GPU Workstation)",
+      "wraps": [
+        "video_ingest",
+        "face_detector",
+        "deepsort_tracker",
+        "identity_cache",
+        "facenet_embedder",
+        "face_matcher",
+        "attendance_engine"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "Application Services Tier",
+      "wraps": [
+        "web_dashboard",
+        "backend_api"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Cloud Data Tier (MongoDB Atlas)",
+      "wraps": [
+        "mongodb_atlas"
+      ],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "cctv-to-ingest",
+      "from": "cctv_camera",
+      "to": "video_ingest",
+      "label": "RTSP stream",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ingest-to-detector",
+      "from": "video_ingest",
+      "to": "face_detector",
+      "label": "raw frames",
+      "variant": "emphasis"
+    },
+    {
+      "id": "detector-to-tracker",
+      "from": "face_detector",
+      "to": "deepsort_tracker",
+      "label": "face crops",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tracker-to-cache",
+      "from": "deepsort_tracker",
+      "to": "identity_cache",
+      "label": "cache lookup",
+      "variant": "dashed"
+    },
+    {
+      "id": "tracker-to-embedder",
+      "from": "deepsort_tracker",
+      "to": "facenet_embedder",
+      "label": "new track",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 42
+    },
+    {
+      "id": "embedder-to-matcher",
+      "from": "facenet_embedder",
+      "to": "face_matcher",
+      "label": "512-d vector",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "matcher-to-attendance",
+      "from": "face_matcher",
+      "to": "attendance_engine",
+      "label": "matched ID",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "attendance-to-api",
+      "from": "attendance_engine",
+      "to": "backend_api",
+      "label": "HTTP POST",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 42
+    },
+    {
+      "id": "dashboard-to-api",
+      "from": "web_dashboard",
+      "to": "backend_api",
+      "label": "HTTPS / REST",
+      "variant": "default",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "api-to-mongodb",
+      "from": "backend_api",
+      "to": "mongodb_atlas",
+      "label": "durable write",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Vision Ingestion & Tracking Pipeline",
+      "items": [
+        "OpenCV captures 30 FPS stream; YOLOv8n-Face isolates face regions with confidence filtering",
+        "DeepSORT assigns persistent track IDs; 3s Identity Cache prevents redundant neural embedding passes"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Biometrics & Business Rules",
+      "items": [
+        "FaceNet computes 512-d embeddings; matcher verifies against enrolled vectors (cosine threshold <= 0.40)",
+        "Attendance Engine debounces duplicate events within session windows before posting to Express API"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security & Trust Boundaries",
+      "items": [
+        "Edge cameras operate in an untrusted network zone isolated from local inference compute",
+        "Authenticated Express API enforces JWT role security before persisting records to MongoDB Atlas"
+      ]
+    }
+  ]
+}

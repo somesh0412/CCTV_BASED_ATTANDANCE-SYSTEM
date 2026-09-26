@@ -1,0 +1,13 @@
+Flask
+flask-cors
+requests
+python-dotenv
+pymongo
+numpy
+opencv-python
+Pillow
+torch
+torchvision
+facenet-pytorch
+ultralytics
+deep-sort-realtime

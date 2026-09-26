@@ -83,10 +83,7 @@ class AttendancePipeline:
         print("\nLoading Attendance Engine...")
 
         self.attendance_engine = AttendanceEngine()
-        self.attendance_api = AttendanceAPI(
-            base_url="http://localhost:5000",
-            endpoint="/api/attendance",
-        )
+        self.attendance_api = AttendanceAPI(endpoint="/api/attendance")
 
         print(
             "Attendance Engine loaded successfully."

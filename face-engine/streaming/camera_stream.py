@@ -38,11 +38,15 @@ Complete flow:
     Teacher Dashboard
 """
 
+import base64
 import sys
 from pathlib import Path
 
 import cv2
-from flask import Flask, Response
+import numpy as np
+import torch
+from facenet_pytorch import MTCNN
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
 
@@ -64,6 +68,7 @@ from pipeline.attendance_pipeline import (
     AttendancePipeline,
     draw_results,
 )
+from recognition.embedding import FaceEmbedder
 
 
 # =========================================================
@@ -80,6 +85,8 @@ CORS(app)
 
 camera = None
 pipeline = None
+registration_detector = None
+registration_embedder = None
 
 
 # =========================================================
@@ -88,7 +95,7 @@ pipeline = None
 
 def initialize_pipeline():
 
-    global pipeline
+    global pipeline, registration_detector, registration_embedder
 
     print("========================================")
     print("Module 16B - AI Attendance Live Stream")
@@ -97,8 +104,52 @@ def initialize_pipeline():
     print("\nLoading Attendance Pipeline...")
 
     pipeline = AttendancePipeline()
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    registration_detector = MTCNN(keep_all=True, device=device)
+    registration_embedder = FaceEmbedder(device=device)
 
     print("\nAttendance Pipeline ready.")
+
+
+@app.post("/register/embedding")
+def register_embedding():
+    if registration_detector is None or registration_embedder is None:
+        return jsonify({"error": "Face engine is still starting"}), 503
+
+    payload = request.get_json(silent=True) or {}
+    image_data = payload.get("image", "")
+    if not isinstance(image_data, str) or "," not in image_data:
+        return jsonify({"error": "A base64 image is required"}), 400
+
+    try:
+        image_bytes = base64.b64decode(image_data.split(",", 1)[1], validate=True)
+        image = cv2.imdecode(np.frombuffer(image_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Image could not be decoded")
+
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        boxes, probabilities = registration_detector.detect(rgb_image)
+        if boxes is None or probabilities is None or len(boxes) == 0:
+            return jsonify({"error": "No face detected. Move closer and try again."}), 422
+
+        best_index = int(np.argmax(probabilities))
+        x1, y1, x2, y2 = boxes[best_index].astype(int)
+        height, width = image.shape[:2]
+        padding_x = int((x2 - x1) * 0.2)
+        padding_y = int((y2 - y1) * 0.2)
+        x1 = max(0, x1 - padding_x)
+        y1 = max(0, y1 - padding_y)
+        x2 = min(width, x2 + padding_x)
+        y2 = min(height, y2 + padding_y)
+        face_crop = image[y1:y2, x1:x2]
+
+        embedding = registration_embedder.get_embedding(face_crop)
+        if embedding is None or embedding.shape != (512,):
+            return jsonify({"error": "Could not create a valid face embedding"}), 422
+
+        return jsonify({"embedding": embedding.astype(float).tolist()})
+    except (ValueError, TypeError, base64.binascii.Error):
+        return jsonify({"error": "Invalid image data"}), 400
 
 
 # =========================================================

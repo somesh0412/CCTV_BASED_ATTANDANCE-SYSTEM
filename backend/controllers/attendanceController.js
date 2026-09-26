@@ -129,7 +129,23 @@ const getAttendance = async (req, res, next) => {
   }
 };
 
+const getStudentAttendance = async (req, res, next) => {
+  try {
+    const attendance = await Attendance.find({ studentId: req.user.studentId })
+      .sort({ date: -1, time: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: attendance.length,
+      attendance,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createAttendance,
   getAttendance,
+  getStudentAttendance,
 };

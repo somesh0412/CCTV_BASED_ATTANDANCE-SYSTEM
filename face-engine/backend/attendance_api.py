@@ -5,19 +5,24 @@ Module 15: Python -> Node.js automatic attendance client
 """
 
 from typing import Optional
+import os
+from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 class AttendanceAPI:
 
     def __init__(
         self,
-        base_url: str = "http://localhost:5000",
+        base_url: Optional[str] = None,
         endpoint: str = "/api/attendance",
         timeout: float = 5.0,
     ):
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or os.getenv("BACKEND_URL", "http://localhost:5000")).rstrip("/")
         self.endpoint = endpoint
         self.timeout = timeout
 

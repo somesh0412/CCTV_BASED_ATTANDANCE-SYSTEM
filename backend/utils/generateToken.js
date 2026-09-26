@@ -1,7 +1,7 @@
 /**
  * generateToken.js
  * -----------------------------------------------------------------------
- * Small reusable helper to sign a JWT for an authenticated teacher.
+ * Small reusable helper to sign a JWT for an authenticated user.
  * Keeping this separate from the service/controller means the signing
  * logic (payload shape, expiry) lives in exactly one place.
  * -----------------------------------------------------------------------
@@ -15,11 +15,12 @@ const env = require("../config/env");
  * @param {Object} teacher - Mongoose Teacher document (or plain object)
  * @returns {string} signed JWT
  */
-function generateToken(teacher) {
+function generateToken(user) {
   const payload = {
-    id: teacher._id,
-    teacherId: teacher.teacherId,
-    role: teacher.role,
+    id: user._id,
+    teacherId: user.teacherId,
+    studentId: user.studentId,
+    role: user.role,
   };
 
   return jwt.sign(payload, env.JWT_SECRET, {

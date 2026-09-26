@@ -17,7 +17,7 @@ import axios from "axios";
  *   api.post("/auth/teacher/login", { ... })
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -50,11 +50,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const isStudent = Boolean(localStorage.getItem("student"));
       localStorage.removeItem("token");
       localStorage.removeItem("teacher");
+      localStorage.removeItem("student");
 
-      if (window.location.pathname !== "/teacher-login") {
-        window.location.href = "/teacher-login";
+      const loginPath = isStudent ? "/student-login" : "/teacher-login";
+      if (window.location.pathname !== loginPath) {
+        window.location.href = loginPath;
       }
     }
     return Promise.reject(error);
