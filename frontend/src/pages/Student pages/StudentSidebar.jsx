@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -34,6 +34,8 @@ const StudentSidebar = ({ activeItem = 'dashboard', onLogout = null }) => {
   // Handle logout confirmation
   const handleLogoutConfirm = () => {
     // Clear authentication token
+    localStorage.removeItem('token');
+    localStorage.removeItem('student');
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
 

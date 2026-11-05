@@ -34,6 +34,18 @@ const scheduleSchema = new mongoose.Schema(
       trim: true,
       default: "All Divisions",
     },
+    department: {
+      type: String,
+      trim: true,
+    },
+    academicYear: {
+      type: String,
+      trim: true,
+    },
+    division: {
+      type: String,
+      trim: true,
+    },
     date: {
       type: String,
       trim: true,

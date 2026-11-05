@@ -21,12 +21,7 @@ import "./LiveAttendance.css";
 const FACE_ENGINE_URL = "http://localhost:8000";
 const ATTENDANCE_API_URL = "http://localhost:5000/api/attendance";
 
-const SESSION_INFO = {
-  classDivision: "TY CSD - D",
-  subject: "Machine Learning",
-  room: "201",
-  time: "10:15 AM – 11:15 AM",
-};
+
 
 const PIPELINE_STEPS = [
   "CCTV",
@@ -43,7 +38,24 @@ const PIPELINE_STEPS = [
   =========================================================
 */
 
-export default function LiveAttendance() {
+export default function LiveAttendance({
+  session = null,
+  autoStart = false,
+}) {
+      const SESSION_INFO = {
+        classDivision:
+          session?.classDivision || "Not selected",
+
+        subject:
+          session?.subject || "Not selected",
+
+        room:
+          session?.room || "--",
+
+        time: session
+          ? `${session.startTime} – ${session.endTime}`
+          : "--",
+      };
   const [sessionStatus, setSessionStatus] = useState("idle");
   const [attendance, setAttendance] = useState([]);
 
@@ -235,7 +247,16 @@ export default function LiveAttendance() {
       setSessionStatus("stopped");
     }
   };
+    useEffect(() => {
+    if (!autoStart) {
+      return;
+    }
 
+    handleStart();
+
+    // handleStart intentionally runs when autoStart changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   /*
     =======================================================

@@ -1,138 +1,63 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 import {
-  Home,
-  Calendar,
+  AlertCircle,
   BarChart3,
+  Bell,
+  BookOpen,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  Clock,
   LineChart,
-  User,
   LogOut,
   Menu,
+  User,
   X,
-  Bell,
-  ChevronDown,
-  BookOpen,
-  Users,
-  AlertCircle,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
-import './StudentDashboard.css';
-import StudentSidebar from './StudentSidebar';
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/axious";
+import PageLogo from "../../assets/cctvLogo.png";
+import "./StudentDashboard.css";
 
-// Sidebar Component
-const Sidebar = ({ activeMenu, setActiveMenu, sidebarOpen, setSidebarOpen }) => {
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'schedule', label: 'My Schedule', icon: Calendar },
-    { id: 'attendance', label: 'My Attendance', icon: BarChart3 },
-    { id: 'report', label: 'Attendance Report', icon: LineChart },
-    { id: 'profile', label: 'Profile', icon: User }
-  ];
-
-  return (
-    <>
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="logo">
-            <AlertCircle size={24} />
-            <span>CCTV ATTENDANCE SYSTEM</span>
-          </div>
-          <button className="close-btn" onClick={() => setSidebarOpen(false)}>
-            <X size={24} />
-          </button>
-        </div>
-
-        <nav className="sidebar-nav">
-          {menuItems.map((item) => {
-            const IconComponent = item.icon;
-            return (
-              <button
-                key={item.id}
-                className={`nav-item ${activeMenu === item.id ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveMenu(item.id);
-                  setSidebarOpen(false);
-                }}
-              >
-                <IconComponent size={20} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <button className="nav-item logout-btn">
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
-      </aside>
-
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-    </>
-  );
+const EMPTY_DASHBOARD = {
+  student: null,
+  attendance: {
+    total: 0,
+    attended: 0,
+    missed: 0,
+    percentage: null,
+    subjects: [],
+    records: [],
+  },
+  schedules: [],
 };
 
-// Header Component
-const Header = ({ sidebarOpen, setSidebarOpen, showProfileMenu, setShowProfileMenu }) => {
-  return (
-    <header className="header">
-      <div className="header-left">
-        <button
-          className="hamburger-btn"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <Menu size={24} />
-        </button>
-        <div className="welcome-text">
-          <h1>Welcome, Somesh 👋</h1>
-          <p>Here's your attendance overview.</p>
-        </div>
-      </div>
+function getErrorMessage(error) {
+  return error.response?.data?.message || "Unable to load your dashboard. Please try again.";
+}
 
-      <div className="header-right">
-        <button className="notification-btn">
-          <Bell size={20} />
-        </button>
+function formatDate(value) {
+  if (!value) return "Unknown date";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
-        <div className="profile-menu-container">
-          <button
-            className="profile-btn"
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-          >
-            <div className="profile-avatar">S</div>
-            <div className="profile-info">
-              <span className="profile-name">Somesh Raut</span>
-            </div>
-            <ChevronDown size={18} className={showProfileMenu ? 'rotate' : ''} />
-          </button>
+function formatToday() {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
-          {showProfileMenu && (
-            <div className="profile-dropdown">
-              <a href="#" className="dropdown-item">
-                <User size={18} />
-                View Profile
-              </a>
-              <a href="#" className="dropdown-item logout">
-                <LogOut size={18} />
-                Logout
-              </a>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-};
+function EmptyState({ children }) {
+  return <div className="empty-state">{children}</div>;
+}
 
-// Summary Card Component
-const SummaryCard = ({ icon: Icon, title, value, isPercentage = false }) => {
+function SummaryCard({ icon: Icon, title, value, isPercentage = false }) {
   return (
     <div className="summary-card">
       <div className="card-header">
@@ -140,105 +65,106 @@ const SummaryCard = ({ icon: Icon, title, value, isPercentage = false }) => {
         <Icon size={24} className="card-icon" />
       </div>
       <div className="card-value">
-        {value}
-        {isPercentage && '%'}
+        {value ?? "—"}
+        {isPercentage && value !== null && value !== undefined ? "%" : ""}
       </div>
     </div>
   );
-};
+}
 
-// Schedule Card Component
-const ScheduleCard = ({ time, subject, className, room, status }) => {
-  const statusColor = status === 'Present' ? 'present' : 'upcoming';
-  
+function ScheduleCard({ schedule }) {
+  const status = schedule.status || "upcoming";
+  const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+
   return (
-    <div className={`schedule-card status-${statusColor}`}>
-      <div className="schedule-time">{time}</div>
+    <div className={`schedule-card status-${status === "completed" ? "present" : "upcoming"}`}>
+      <div className="schedule-time">{schedule.time || "Time not available"}</div>
       <div className="schedule-details">
-        <h4>{subject}</h4>
-        <p className="schedule-class">{className}</p>
-        <p className="schedule-room">Room {room}</p>
+        <h4>{schedule.subject}</h4>
+        <p className="schedule-class">{schedule.classDivision}</p>
+        <p className="schedule-room">Room {schedule.room}</p>
       </div>
-      <div className={`schedule-status ${statusColor}`}>
-        {status === 'Present' ? (
-          <>
-            <CheckCircle size={18} />
-            {status}
-          </>
-        ) : (
-          <>
-            <Clock size={18} />
-            {status}
-          </>
-        )}
+      <div className={`schedule-status ${status === "completed" ? "present" : "upcoming"}`}>
+        {status === "completed" ? <CheckCircle size={18} /> : <Clock size={18} />}
+        {statusLabel}
       </div>
     </div>
   );
-};
+}
 
-// Attendance Table Component
-const AttendanceTable = ({ attendanceData }) => {
+function AttendanceTable({ records }) {
   return (
     <div className="attendance-section">
       <h2>Recent Attendance</h2>
-      <div className="table-wrapper">
-        <table className="attendance-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Subject</th>
-              <th>Class</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {attendanceData.map((record, index) => (
-              <tr key={index}>
-                <td>{record.date}</td>
-                <td>{record.subject}</td>
-                <td>{record.class}</td>
-                <td>
-                  <span className={`status-badge ${record.status.toLowerCase()}`}>
-                    <span className="status-dot"></span>
-                    {record.status}
-                  </span>
-                </td>
+      {!records.length ? (
+        <EmptyState>No attendance records yet.</EmptyState>
+      ) : (
+        <div className="table-wrapper">
+          <table className="attendance-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Subject</th>
+                <th>Class</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {records.map((record, index) => (
+                <tr key={`${record.date}-${record.subject}-${index}`}>
+                  <td>{formatDate(record.date)}</td>
+                  <td>{record.subject}</td>
+                  <td>{record.classDivision}</td>
+                  <td>
+                    <span className={`status-badge ${record.status.toLowerCase()}`}>
+                      <span className="status-dot" />
+                      {record.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
-};
+}
 
-// Subject Attendance Component
-const SubjectAttendance = ({ subjects }) => {
+function SubjectAttendance({ subjects }) {
   return (
     <div className="subject-attendance-section">
       <h2>Subject-wise Attendance</h2>
-      <div className="subjects-grid">
-        {subjects.map((subject, index) => (
-          <div key={index} className="subject-card">
-            <div className="subject-header">
-              <h4>{subject.name}</h4>
-              <span className="subject-percentage">{subject.percentage}%</span>
+      {!subjects.length ? (
+        <EmptyState>No subject attendance records yet.</EmptyState>
+      ) : (
+        <div className="subjects-grid">
+          {subjects.map((subject) => (
+            <div key={subject.name} className="subject-card">
+              <div className="subject-header">
+                <h4>{subject.name}</h4>
+                <span className="subject-percentage">
+                  {subject.percentage === null ? "—" : `${subject.percentage}%`}
+                </span>
+              </div>
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${subject.percentage || 0}%` }}
+                />
+              </div>
+              <small>{subject.attended} of {subject.total} classes attended</small>
             </div>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: `${subject.percentage}%` }}
-              ></div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
+}
 
-// Face Recognition Status Component
-const FaceRecognitionStatus = () => {
+function FaceRecognitionStatus({ student }) {
+  const registered = student?.faceRegistered === true;
+
   return (
     <div className="face-recognition-card">
       <div className="face-card-header">
@@ -248,193 +174,231 @@ const FaceRecognitionStatus = () => {
         <div className="status-item">
           <span className="status-label">Status:</span>
           <div className="status-value">
-            <CheckCircle size={18} className="success-icon" />
-            <span>Registered</span>
+            {registered ? <CheckCircle size={18} className="success-icon" /> : <AlertCircle size={18} />}
+            <span>{registered ? "Registered" : "Not registered"}</span>
           </div>
         </div>
         <div className="status-item">
           <span className="status-label">Last Updated:</span>
-          <span className="status-value-text">10 August 2026</span>
+          <span className="status-value-text">
+            {student?.faceUpdatedAt ? formatDate(student.faceUpdatedAt.split("T")[0]) : "Not available"}
+          </span>
         </div>
       </div>
-      <button className="view-profile-btn">View Profile</button>
     </div>
   );
-};
+}
 
-// Profile Page Component
-const ProfilePage = () => {
-  const profileData = {
-    name: 'Somesh Raut',
-    studentId: 'CSD-D-28',
-    department: 'Computer Science and Design',
-    class: 'TY CSD - D',
-    email: 'student@college.edu'
-  };
+function ProfilePage({ student }) {
+  const fullName = `${student.firstName} ${student.lastName}`.trim();
+  const details = [
+    ["Name", fullName],
+    ["Student ID", student.studentId],
+    ["Department", student.department],
+    ["Class / Division", student.classDivision],
+    ["Email", student.email],
+  ];
 
   return (
     <div className="profile-page">
       <div className="profile-header">
-        <div className="profile-avatar-large">S</div>
-        <h1>{profileData.name}</h1>
+        <div className="profile-avatar-large">{student.firstName.charAt(0).toUpperCase()}</div>
+        <h1>{fullName}</h1>
       </div>
-
       <div className="profile-info-grid">
-        <div className="profile-info-item">
-          <label>Name</label>
-          <p>{profileData.name}</p>
-        </div>
-        <div className="profile-info-item">
-          <label>Student ID</label>
-          <p>{profileData.studentId}</p>
-        </div>
-        <div className="profile-info-item">
-          <label>Department</label>
-          <p>{profileData.department}</p>
-        </div>
-        <div className="profile-info-item">
-          <label>Class / Division</label>
-          <p>{profileData.class}</p>
-        </div>
-        <div className="profile-info-item">
-          <label>Email</label>
-          <p>{profileData.email}</p>
-        </div>
+        {details.map(([label, value]) => (
+          <div className="profile-info-item" key={label}>
+            <label>{label}</label>
+            <p>{value || "Not available"}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
-};
+}
 
-// Main Dashboard Component
-const DashboardContent = ({ activeMenu }) => {
-  // Mock Data
-  const attendanceData = [
-    { date: '16 Aug', subject: 'Machine Learning', class: 'TY CSD-D', status: 'Present' },
-    { date: '15 Aug', subject: 'DBMS', class: 'TY CSD-D', status: 'Present' },
-    { date: '14 Aug', subject: 'Computer Networks', class: 'TY CSD-D', status: 'Absent' },
-    { date: '13 Aug', subject: 'Data Science', class: 'TY CSD-D', status: 'Present' }
+function Sidebar({ activeMenu, setActiveMenu, sidebarOpen, setSidebarOpen, onLogout }) {
+  const menuItems = [
+    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+    { id: "schedule", label: "My Schedule", icon: Calendar },
+    { id: "attendance", label: "My Attendance", icon: BookOpen },
+    { id: "report", label: "Attendance Report", icon: LineChart },
+    { id: "profile", label: "Profile", icon: User },
   ];
 
-  const scheduleData = [
-    { time: '10:15 AM – 11:15 AM', subject: 'Machine Learning', className: 'TY CSD - D', room: '201', status: 'Present' },
-    { time: '12:00 PM – 1:00 PM', subject: 'Database Management System', className: 'TY CSD - D', room: '304', status: 'Upcoming' },
-    { time: '2:00 PM – 3:00 PM', subject: 'Computer Networks', className: 'TY CSD - D', room: '205', status: 'Upcoming' }
-  ];
+  return (
+    <>
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-header">
+          <div className="logo">
+            <img src={PageLogo} alt="" className="sidebar-logo-image" />
+            <span>CCTV ATTENDANCE SYSTEM</span>
+          </div>
+          <button className="close-btn" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <X size={24} />
+          </button>
+        </div>
+        <nav className="sidebar-nav">
+          {menuItems.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              className={`nav-item ${activeMenu === id ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu(id);
+                setSidebarOpen(false);
+              }}
+            >
+              <Icon size={20} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        <button className="nav-item logout-btn" onClick={onLogout}>
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </aside>
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+    </>
+  );
+}
 
-  const subjectData = [
-    { name: 'Machine Learning', percentage: 90 },
-    { name: 'Database Management System', percentage: 80 },
-    { name: 'Computer Networks', percentage: 100 },
-    { name: 'Data Science', percentage: 90 }
-  ];
+function Header({ student, sidebarOpen, setSidebarOpen }) {
+  const fullName = `${student.firstName} ${student.lastName}`.trim();
 
-  const today = new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  return (
+    <header className="header">
+      <div className="header-left">
+        <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Open menu">
+          <Menu size={24} />
+        </button>
+        <div className="welcome-text">
+          <h1>Welcome, {student.firstName} 👋</h1>
+          <p>Here&apos;s your attendance overview.</p>
+        </div>
+      </div>
+      <div className="header-right">
+        <button className="notification-btn" aria-label="Notifications"><Bell size={20} /></button>
+        <div className="profile-btn">
+          <div className="profile-avatar">{student.firstName.charAt(0).toUpperCase()}</div>
+          <div className="profile-info"><span className="profile-name">{fullName}</span></div>
+          <ChevronDown size={18} />
+        </div>
+      </div>
+    </header>
+  );
+}
 
-  if (activeMenu === 'profile') {
-    return <ProfilePage />;
-  }
+function DashboardContent({ activeMenu, dashboard }) {
+  const { student, attendance, schedules } = dashboard;
+  const today = formatToday();
 
-  if (activeMenu === 'schedule') {
+  if (activeMenu === "profile") return <ProfilePage student={student} />;
+  if (activeMenu === "schedule") {
     return (
       <div className="content">
         <h2>My Schedule</h2>
         <p className="section-date">{today}</p>
-        <div className="schedule-cards">
-          {scheduleData.map((schedule, index) => (
-            <ScheduleCard key={index} {...schedule} />
-          ))}
-        </div>
+        {!schedules.length ? <EmptyState>No schedule available for today.</EmptyState> : (
+          <div className="schedule-cards">{schedules.map((schedule) => <ScheduleCard key={schedule.id} schedule={schedule} />)}</div>
+        )}
       </div>
     );
   }
-
-  if (activeMenu === 'attendance') {
+  if (activeMenu === "attendance") {
     return (
       <div className="content">
         <h2>My Attendance</h2>
         <div className="attendance-overview">
-          <SummaryCard icon={BookOpen} title="Total Classes" value="42" />
-          <SummaryCard icon={CheckCircle} title="Classes Attended" value="38" />
-          <SummaryCard icon={AlertCircle} title="Classes Missed" value="4" />
-          <SummaryCard icon={BarChart3} title="Overall Attendance" value="90.5" isPercentage={true} />
+          <SummaryCard icon={BookOpen} title="Total Classes" value={attendance.total || 0} />
+          <SummaryCard icon={CheckCircle} title="Classes Attended" value={attendance.attended || 0} />
+          <SummaryCard icon={AlertCircle} title="Classes Missed" value={attendance.missed || 0} />
+          <SummaryCard icon={BarChart3} title="Overall Attendance" value={attendance.percentage} isPercentage />
         </div>
-        <SubjectAttendance subjects={subjectData} />
+        <SubjectAttendance subjects={attendance.subjects} />
       </div>
     );
   }
-
-  if (activeMenu === 'report') {
-    return (
-      <div className="content">
-        <h2>Attendance Report</h2>
-        <AttendanceTable attendanceData={attendanceData} />
-      </div>
-    );
+  if (activeMenu === "report") {
+    return <div className="content"><h2>Attendance Report</h2><AttendanceTable records={attendance.records} /></div>;
   }
 
-  // Default Dashboard
   return (
     <div className="content">
       <div className="attendance-summary">
-        <SummaryCard icon={BookOpen} title="Total Classes" value="42" />
-        <SummaryCard icon={CheckCircle} title="Classes Attended" value="38" />
-        <SummaryCard icon={AlertCircle} title="Classes Missed" value="4" />
-        <SummaryCard icon={BarChart3} title="Overall Attendance" value="90.5" isPercentage={true} />
+        <SummaryCard icon={BookOpen} title="Total Classes" value={attendance.total || 0} />
+        <SummaryCard icon={CheckCircle} title="Classes Attended" value={attendance.attended || 0} />
+        <SummaryCard icon={AlertCircle} title="Classes Missed" value={attendance.missed || 0} />
+        <SummaryCard icon={BarChart3} title="Overall Attendance" value={attendance.percentage} isPercentage />
       </div>
-
       <section className="today-schedule-section">
-        <div className="section-header">
-          <h2>Today's Schedule</h2>
-          <p className="section-date">{today}</p>
-        </div>
-        <div className="schedule-cards">
-          {scheduleData.map((schedule, index) => (
-            <ScheduleCard key={index} {...schedule} />
-          ))}
-        </div>
+        <div className="section-header"><h2>Today&apos;s Schedule</h2><p className="section-date">{today}</p></div>
+        {!schedules.length ? <EmptyState>No schedule available for today.</EmptyState> : (
+          <div className="schedule-cards">{schedules.map((schedule) => <ScheduleCard key={schedule.id} schedule={schedule} />)}</div>
+        )}
       </section>
-
       <div className="dashboard-grid">
-        <SubjectAttendance subjects={subjectData} />
-        <FaceRecognitionStatus />
+        <SubjectAttendance subjects={attendance.subjects} />
+        <FaceRecognitionStatus student={student} />
       </div>
-
-      <AttendanceTable attendanceData={attendanceData} />
+      <AttendanceTable records={attendance.records} />
     </div>
   );
-};
+}
 
-// Main App Component
 export default function StudentDashboard() {
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const navigate = useNavigate();
+  const [activeMenu, setActiveMenu] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboard() {
+      try {
+        const response = await api.get("/auth/student/dashboard");
+        if (active) setDashboard(response.data.data);
+      } catch (requestError) {
+        if (active) setError(getErrorMessage(requestError));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadDashboard();
+    return () => { active = false; };
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("student");
+    navigate("/student-login", { replace: true });
+  };
+
+  const content = useMemo(() => {
+    if (loading) return <div className="dashboard-state" role="status">Loading your dashboard...</div>;
+    if (error) return <div className="dashboard-state dashboard-error" role="alert">{error}</div>;
+    if (!dashboard.student) return <div className="dashboard-state dashboard-error">Student profile is unavailable.</div>;
+    return <DashboardContent activeMenu={activeMenu} dashboard={dashboard} />;
+  }, [activeMenu, dashboard, error, loading]);
 
   return (
     <div className="student-dashboard">
-      <Sidebar
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
-      <div className="main-container">
-        <Header
+      {dashboard.student && (
+        <Sidebar
+          activeMenu={activeMenu}
+          setActiveMenu={setActiveMenu}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          showProfileMenu={showProfileMenu}
-          setShowProfileMenu={setShowProfileMenu}
+          onLogout={logout}
         />
-
-        <main className="main-content">
-          <DashboardContent activeMenu={activeMenu} />
-        </main>
+      )}
+      <div className="main-container">
+        {dashboard.student && <Header student={dashboard.student} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+        <main className="main-content">{content}</main>
       </div>
     </div>
   );

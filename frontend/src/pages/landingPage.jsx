@@ -118,7 +118,7 @@ export default function LandingPage() {
                 </span>
                 <h4>Student Login</h4>
                 <p>Access your attendance and profile</p>
-                <button className="cas-btn cas-btn--blue" >
+                <button className="cas-btn cas-btn--blue" onClick={() => navigate('/student-login')}>
                   Login as Student <ArrowRight size={16} />
                 </button>
               </div>

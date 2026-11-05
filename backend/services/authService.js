@@ -9,7 +9,11 @@
  */
 
 const Teacher = require("../models/Teacher");
+const Student = require("../models/Student");
+const StudentAccount = require("../models/StudentAccount");
+const mongoose = require("mongoose");
 const generateToken = require("../utils/generateToken");
+const generateStudentToken = require("../utils/generateStudentToken");
 
 /**
  * Registers a new teacher.
@@ -115,4 +119,146 @@ async function getTeacherProfile(teacherIdFromToken) {
   };
 }
 
-module.exports = { registerTeacher, loginTeacher, getTeacherProfile };
+async function registerStudent({
+  firstName,
+  lastName,
+  studentId,
+  email,
+  password,
+  department,
+  classDivision,
+}) {
+  const normalizedStudentId = studentId.trim().toUpperCase();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const existingStudent = await Student.findOne({ studentId: normalizedStudentId }).select(
+    "_id studentId firstName lastName name email department className faceRegistered"
+  );
+
+  if (!existingStudent) {
+    const error = new Error("Student record not found. Please complete face registration first.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const accountEmail = (existingStudent.email || normalizedEmail).trim().toLowerCase();
+  const existingAccount = await StudentAccount.findOne({
+    $or: [{ student: existingStudent._id }, { studentId: normalizedStudentId }, { email: accountEmail }],
+  }).select("_id");
+
+  if (existingAccount) {
+    const error = new Error("Student account already exists. Please log in.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const existingNameParts = (existingStudent.name || "").trim().split(/\s+/);
+  const accountFirstName =
+    existingStudent.firstName || existingNameParts[0] || firstName;
+  const accountLastName =
+    existingStudent.lastName || existingNameParts.slice(1).join(" ") || lastName;
+  const accountData = {
+    student: existingStudent._id,
+    studentId: existingStudent.studentId,
+    firstName: accountFirstName.trim(),
+    lastName: accountLastName.trim(),
+    email: accountEmail,
+    password,
+    department: (existingStudent.department || department).trim(),
+    classDivision: (existingStudent.className || classDivision).trim(),
+  };
+
+  const account = await createStudentAccount(accountData);
+
+  return {
+    id: account._id,
+    firstName: account.firstName,
+    lastName: account.lastName,
+    studentId: account.studentId,
+    email: account.email,
+    department: account.department,
+    classDivision: account.classDivision,
+    role: account.role,
+    faceRegistered: Boolean(existingStudent.faceRegistered),
+  };
+}
+
+async function createStudentAccount(accountData) {
+  const session = await mongoose.startSession();
+
+  try {
+    try {
+      session.startTransaction();
+      const [account] = await StudentAccount.create([accountData], { session });
+      await session.commitTransaction();
+      return account;
+    } catch (error) {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
+
+      if (!isTransactionUnsupported(error)) {
+        throw error;
+      }
+    }
+  } finally {
+    await session.endSession();
+  }
+
+  return StudentAccount.create(accountData);
+}
+
+function isTransactionUnsupported(error) {
+  return /transaction|replica set|mongos/i.test(error.message || "");
+}
+
+async function loginStudent({ identifier, password }) {
+  const normalizedIdentifier = identifier.trim();
+  const query = normalizedIdentifier.includes("@")
+    ? { email: normalizedIdentifier.toLowerCase() }
+    : { studentId: normalizedIdentifier.toUpperCase() };
+
+  const account = await StudentAccount.findOne(query).select("+password");
+  if (!account) {
+    const error = new Error("Student account not found. Please register first.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (!(await account.matchPassword(password))) {
+    const error = new Error("Invalid Student ID/email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const student = await Student.findById(account.student);
+  if (!student) {
+    const error = new Error("Linked student record was not found");
+    error.statusCode = 500;
+    throw error;
+  }
+  const token = generateStudentToken(account);
+
+  return {
+    token,
+    student: {
+      id: account._id,
+      firstName: account.firstName,
+      lastName: account.lastName,
+      studentId: account.studentId,
+      email: account.email,
+      department: account.department,
+      classDivision: account.classDivision,
+      role: account.role,
+      faceRegistered: student.faceRegistered === true,
+    },
+  };
+}
+
+module.exports = {
+  registerTeacher,
+  loginTeacher,
+  getTeacherProfile,
+  registerStudent,
+  loginStudent,
+};

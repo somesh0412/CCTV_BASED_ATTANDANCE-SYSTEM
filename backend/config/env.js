@@ -10,7 +10,12 @@
 
 require("dotenv").config();
 
-const REQUIRED_ENV_VARS = ["PORT", "MONGO_URI", "JWT_SECRET", "JWT_EXPIRES_IN"];
+const REQUIRED_ENV_VARS = [
+  "PORT",
+  "MONGO_URI",
+  "JWT_SECRET",
+  "JWT_EXPIRES_IN",
+];
 
 function validateEnv() {
   const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
@@ -32,6 +37,9 @@ const env = {
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
+  FACE_ENROLLMENT_API_URL:
+    process.env.FACE_ENROLLMENT_API_URL || "http://127.0.0.1:8000",
+  FACE_ENROLLMENT_API_SECRET: process.env.FACE_ENROLLMENT_API_SECRET,
   NODE_ENV: process.env.NODE_ENV || "development",
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ShieldCheck,
   Menu,
@@ -26,6 +26,12 @@ import {
 
 import "./TeacherDashboard.css";
 import LiveAttendance from "./LiveAttendance";
+import TodaySchedule from "./Todayschedule.jsx";
+import AttendanceHistory from "./AttendanceHistory";
+import Students from "./Students";
+import Reports from "./Reports";
+import TeacherProfile from "./Teacherprofile.jsx";
+import api from "../../api/axious.js"; // Import the API utility for making requests
 
 
 /* ----------------------------------------------------------
@@ -797,6 +803,27 @@ export default function TeacherDashboard({
   onLogout,
   onNavigate,
 }) {
+  const [currentTeacherName, setCurrentTeacherName] =
+  useState(teacherName);
+  useEffect(() => {
+    const fetchTeacherProfile = async () => {
+      try {
+        const response = await api.get("/auth/teacher/profile");
+
+        const teacher = response.data.data.teacher;
+
+        const fullName = `${teacher.firstName || ""} ${
+          teacher.lastName || ""
+        }`.trim();
+
+        setCurrentTeacherName(fullName || teacherName);
+      } catch (error) {
+        console.error("Failed to load teacher profile:", error);
+      }
+    };
+
+    fetchTeacherProfile();
+  }, [teacherName]);
 
   const [
     sidebarOpen,
@@ -834,6 +861,10 @@ export default function TeacherDashboard({
     startedSessions,
     setStartedSessions,
   ] = useState({});
+  const [
+    selectedSchedule,
+    setSelectedSchedule,
+  ] = useState(null);
 
 
   /* ========================================================
@@ -925,24 +956,46 @@ export default function TeacherDashboard({
      START ATTENDANCE FROM SCHEDULE
   ======================================================== */
 
-  const handleStartAttendance = (
-    id
-  ) => {
-
-    setStartedSessions(
-      (prev) => ({
-        ...prev,
-        [id]: true,
-      })
+  const handleStartAttendance = async (scheduleItem) => {
+  try {
+    // Start attendance session in backend
+    const response = await api.post(
+      "/attendance/sessions/start",
+      {
+        scheduleId: scheduleItem.id,
+      }
     );
 
-    /*
-      Also open Live Attendance page.
-    */
+    const session = response.data.session;
 
+    console.log("Attendance session started:", session);
+
+    // Save selected schedule/session
+    setSelectedSchedule({
+      ...scheduleItem,
+      sessionId: session._id,
+    });
+
+    // Mark this schedule as started
+    setStartedSessions((prev) => ({
+      ...prev,
+      [scheduleItem.id]: true,
+    }));
+
+    // Open Live Attendance
     handleMenuClick("live");
-  };
+  } catch (error) {
+    console.error(
+      "Failed to start attendance session:",
+      error
+    );
 
+    alert(
+      error.response?.data?.message ||
+        "Failed to start attendance session."
+    );
+  }
+};
 
   return (
 
@@ -1013,19 +1066,16 @@ export default function TeacherDashboard({
 
               <span className="td-profile__avatar">
 
-                {teacherName
+                {currentTeacherName
                   .split(" ")
-                  .map(
-                    (w) => w[0]
-                  )
+                  .map((w) => w[0])
                   .slice(0, 2)
                   .join("")}
-
               </span>
 
 
               <span className="td-profile__name">
-                {teacherName}
+                {currentTeacherName}
               </span>
 
 
@@ -1264,8 +1314,64 @@ export default function TeacherDashboard({
               ================================================
             */
 
-            <LiveAttendance />
+            <LiveAttendance
+              session={selectedSchedule}
+              autoStart={Boolean(selectedSchedule)}
+            />
 
+          ) : activeMenu === "schedule" ? (
+
+            /*
+              ================================================
+              TODAY'S SCHEDULE PAGE
+              ================================================
+            */
+
+            <TodaySchedule
+              onStartAttendance={handleStartAttendance}
+            />
+
+          ) : activeMenu === "history" ? (
+
+            /*
+              ================================================
+              ATTENDANCE HISTORY PAGE
+              ================================================
+            */
+
+            <AttendanceHistory />
+
+          ) : activeMenu === "students" ? (
+
+            /*
+              ================================================
+              STUDENTS PAGE
+              ================================================
+            */
+
+            <Students />
+
+          ) : activeMenu === "reports" ? (
+
+            /*
+              ================================================
+              REPORTS PAGE
+              ================================================
+            */
+
+            <Reports />
+
+          ) : activeMenu === "profile" ? (
+
+            /*
+              ================================================
+              PROFILE / SETTINGS PAGE
+              ================================================
+            */
+
+            <TeacherProfile
+              onProfileUpdated={setCurrentTeacherName}
+            />
           ) : (
 
             /*
@@ -1278,7 +1384,7 @@ export default function TeacherDashboard({
 
               <h1 className="td-welcome">
 
-                Welcome, {teacherName} 👋
+                Welcome, {currentTeacherName} 👋
 
               </h1>
 
@@ -1362,7 +1468,7 @@ export default function TeacherDashboard({
                     (item) => (
 
                       <ScheduleItem
-                        key={item.id}
+                        key={item}
                         item={item}
                         onStartAttendance={
                           handleStartAttendance

@@ -1,54 +1,37 @@
-/**
- * scheduleRoutes.js
- * -----------------------------------------------------------------------
- * Express CRUD routes for schedules (/api/schedules).
- * -----------------------------------------------------------------------
- */
-
 const express = require("express");
-const { body } = require("express-validator");
-const scheduleController = require("../controllers/scheduleController");
-const validateRequest = require("../middleware/validateMiddleware");
+
+const {
+  getTodayTeacherSchedules,
+  createTeacherSchedule,
+} = require("../controllers/scheduleController");
+
+const authMiddleware = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// Validation for creating/updating a schedule
-const scheduleValidation = [
-  body("subject")
-    .trim()
-    .notEmpty()
-    .withMessage("Subject is required"),
+// ---------------------------------------------------------------------
+// Teacher Today's Schedule
+// GET /api/schedules/teacher/today
+// ---------------------------------------------------------------------
 
-  body("time")
-    .trim()
-    .notEmpty()
-    .withMessage("Time slot is required"),
-
-  body("room")
-    .trim()
-    .notEmpty()
-    .withMessage("Room is required"),
-
-  body("teacher")
-    .trim()
-    .notEmpty()
-    .withMessage("Teacher is required"),
-];
-
-// CRUD Routes
-router.post(
-  "/",
-  scheduleValidation,
-  validateRequest,
-  scheduleController.createSchedule
+router.get(
+  "/teacher/today",
+  authMiddleware,
+  roleMiddleware("teacher"),
+  getTodayTeacherSchedules
 );
 
-router.get("/", scheduleController.getSchedules);
+// ---------------------------------------------------------------------
+// Teacher Create Schedule
+// POST /api/schedules/teacher
+// ---------------------------------------------------------------------
 
-router.get("/:id", scheduleController.getScheduleById);
-
-router.put("/:id", scheduleController.updateSchedule);
-
-router.delete("/:id", scheduleController.deleteSchedule);
+router.post(
+  "/teacher",
+  authMiddleware,
+  roleMiddleware("teacher"),
+  createTeacherSchedule
+);
 
 module.exports = router;

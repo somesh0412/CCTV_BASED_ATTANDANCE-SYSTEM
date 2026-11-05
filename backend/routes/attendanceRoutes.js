@@ -1,66 +1,69 @@
-/**
- * attendanceRoutes.js
- * -----------------------------------------------------------------------
- * Routes used by the Python face-recognition engine.
- * -----------------------------------------------------------------------
- */
-
 const express = require("express");
-const { body } = require("express-validator");
 
-const attendanceController = require("../controllers/attendanceController");
-const validateRequest = require("../middleware/validateMiddleware");
+const {
+  createAttendance,
+  getAttendance,
+  getTeacherAttendanceHistory,
+  startAttendanceSession,
+  getTeacherReports,
+  exportTeacherReports,
+} = require("../controllers/attendanceController");
+
+const authMiddleware = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// ---------------------------------------------------------------------
+// Python Face Engine
 // POST /api/attendance
-// ---------------------------------------------------------------------
+router.post("/", createAttendance);
 
-const attendanceValidation = [
-  body("studentId")
-    .trim()
-    .notEmpty()
-    .withMessage("Student ID is required"),
-
-  body("name")
-    .trim()
-    .notEmpty()
-    .withMessage("Student name is required"),
-
-  body("date")
-    .trim()
-    .notEmpty()
-    .withMessage("Attendance date is required"),
-
-  body("time")
-    .trim()
-    .notEmpty()
-    .withMessage("Attendance time is required"),
-
-  body("trackId")
-    .isInt({ min: 0 })
-    .withMessage("Track ID must be a valid number"),
-
-  body("similarity")
-    .isFloat({ min: 0, max: 1 })
-    .withMessage("Similarity must be between 0 and 1"),
-];
-
-router.post(
+// General attendance
+// GET /api/attendance
+router.get(
   "/",
-  attendanceValidation,
-  validateRequest,
-  attendanceController.createAttendance
+  authMiddleware,
+  roleMiddleware("teacher"),
+  getAttendance
 );
 
+// Teacher Attendance History
+// GET /api/attendance/teacher/history
+router.get(
+  "/teacher/history",
+  authMiddleware,
+  roleMiddleware("teacher"),
+  getTeacherAttendanceHistory
+);
+// Start attendance session
+// POST /api/attendance/sessions/start
+
+router.post(
+  "/sessions/start",
+  authMiddleware,
+  roleMiddleware("teacher"),
+  startAttendanceSession
+);
 // ---------------------------------------------------------------------
-// GET /api/attendance
+// Teacher Reports
+// GET /api/attendance/teacher/reports
 // ---------------------------------------------------------------------
 
 router.get(
-  "/",
-  attendanceController.getAttendance
+  "/teacher/reports",
+  authMiddleware,
+  roleMiddleware("teacher"),
+  getTeacherReports
 );
+// ---------------------------------------------------------------------
+// Export teacher attendance report
+// GET /api/attendance/teacher/reports/export
+// ---------------------------------------------------------------------
 
+router.get(
+  "/teacher/reports/export",
+  authMiddleware,
+  roleMiddleware("teacher"),
+  exportTeacherReports
+);
 module.exports = router;

@@ -14,6 +14,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
+const studentEnrollmentRoutes = require("./routes/studentEnrollmentRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -32,6 +33,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/schedules", scheduleRoutes);
+app.use("/api/student-enrollment", studentEnrollmentRoutes);
 
 // --- Error handling (must be last) ---------------------------------------
 app.use(notFound);

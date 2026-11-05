@@ -9,6 +9,10 @@ const mongoose = require("mongoose");
 
 const attendanceSchema = new mongoose.Schema(
   {
+    // ---------------------------------------------------------
+    // Student information
+    // ---------------------------------------------------------
+
     studentId: {
       type: String,
       required: true,
@@ -20,6 +24,59 @@ const attendanceSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    // ---------------------------------------------------------
+    // Teacher / class / session information
+    // ---------------------------------------------------------
+
+    teacherId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    sessionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AttendanceSession",
+      required: true,
+    },
+
+    scheduleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Schedule",
+      required: true,
+    },
+
+    subject: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    classDivision: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    department: {
+      type: String,
+      trim: true,
+    },
+
+    academicYear: {
+      type: String,
+      trim: true,
+    },
+
+    division: {
+      type: String,
+      trim: true,
+    },
+
+    // ---------------------------------------------------------
+    // Attendance information
+    // ---------------------------------------------------------
 
     date: {
       type: String,
@@ -58,13 +115,13 @@ const attendanceSchema = new mongoose.Schema(
 );
 
 // ---------------------------------------------------------
-// Prevent duplicate attendance for the same student/date
+// Prevent duplicate attendance for same student/session
 // ---------------------------------------------------------
 
 attendanceSchema.index(
   {
     studentId: 1,
-    date: 1,
+    sessionId: 1,
   },
   {
     unique: true,

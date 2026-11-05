@@ -84,10 +84,9 @@ students = []
 
 for student in students_collection.find():
 
-    student_id = student["studentId"]
-    name = student["name"]
-
-    embeddings = []
+    print("\n--- STUDENT DOCUMENT ---")
+    print(student)
+    break
 
     for stored_embedding in student["faceEmbeddings"]:
 

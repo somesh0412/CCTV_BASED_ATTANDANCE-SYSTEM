@@ -99,6 +99,14 @@ html, body {
   flex-shrink: 0;
 }
 
+.sidebar-logo-image {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
 .close-btn {
   display: none;
   background: none;
@@ -169,6 +177,37 @@ html, body {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
+}
+
+.dashboard-state,
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 24px;
+  color: var(--text-secondary);
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.dashboard-state {
+  min-height: 240px;
+  font-size: 16px;
+}
+
+.dashboard-error {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.subject-card small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-secondary);
 }
 
 /* ============================================
